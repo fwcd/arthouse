@@ -4,14 +4,17 @@ use lighthouse_client::{Lighthouse, TokioWebSocket};
 use tokio::net::UdpSocket;
 use tracing::{info, info_span, warn, Instrument};
 
+use crate::address::DmxAddress;
+
 pub struct ArtNetAdapter {
     lh: Lighthouse<TokioWebSocket>,
     socket: UdpSocket,
+    start_address: DmxAddress,
 }
 
 impl ArtNetAdapter {
-    pub fn new(lh: Lighthouse<TokioWebSocket>, socket: UdpSocket) -> Self {
-        Self { lh, socket }
+    pub fn new(lh: Lighthouse<TokioWebSocket>, socket: UdpSocket, start_address: DmxAddress) -> Self {
+        Self { lh, socket, start_address }
     }
 
     pub async fn run(self) -> Result<()> {
