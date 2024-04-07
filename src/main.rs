@@ -1,7 +1,10 @@
+use std::{net::SocketAddr, str::FromStr};
+
 use anyhow::Result;
 use artnet_protocol::ArtCommand;
 use clap::Parser;
 use lighthouse_client::{protocol::Authentication, Lighthouse, LIGHTHOUSE_URL};
+use socket2::{Domain, Socket, Type};
 use tokio::net::UdpSocket;
 use tracing::{debug, info};
 
@@ -28,13 +31,19 @@ async fn main() -> Result<()> {
     let auth = Authentication::new(&args.username, &args.token);
     let lh = Lighthouse::connect_with_tokio(auth).await?;
 
-    let socket = UdpSocket::bind(("0.0.0.0", 6454)).await?;
+    let s2_socket = Socket::new(Domain::IPV4, Type::DGRAM, None)?;
+    s2_socket.set_broadcast(true)?;
+    s2_socket.set_reuse_port(true)?;
+    s2_socket.bind(&SocketAddr::from_str("0.0.0.0:6454")?.into())?;
 
-    info!("Listening for Art-Net packets on {} (UDP)", socket.local_addr()?);
+    let std_socket = std::net::UdpSocket::from(s2_socket);
+    let tokio_socket = UdpSocket::from_std(std_socket)?;
+
+    info!("Listening for Art-Net packets on {} (UDP)", tokio_socket.local_addr()?);
     loop {
         // TODO: Handle errors
         let mut buffer = [0u8; 1024];
-        let (length, addr) = socket.recv_from(&mut buffer).await?;
+        let (length, addr) = tokio_socket.recv_from(&mut buffer).await?;
         let command = ArtCommand::from_buffer(&buffer[..length])?;
 
         debug!(%addr, ?command, "Received command");

@@ -96,6 +96,7 @@ dependencies = [
  "dotenvy",
  "futures",
  "lighthouse-client",
+ "socket2",
  "tokio",
  "tracing",
  "tracing-subscriber",
