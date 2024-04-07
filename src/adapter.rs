@@ -2,7 +2,7 @@ use anyhow::Result;
 use artnet_protocol::ArtCommand;
 use lighthouse_client::{Lighthouse, TokioWebSocket};
 use tokio::net::UdpSocket;
-use tracing::{debug, info, info_span, Instrument};
+use tracing::{info, info_span, warn, Instrument};
 
 pub struct ArtNetAdapter {
     lh: Lighthouse<TokioWebSocket>,
@@ -18,11 +18,16 @@ impl ArtNetAdapter {
         info!("Listening for Art-Net packets on {} (UDP)", self.socket.local_addr()?);
 
         loop {
-            // TODO: Handle errors
             let mut buffer = [0u8; 1024];
             let (length, addr) = self.socket.recv_from(&mut buffer).await?;
-            self.handle_raw(&buffer[..length])
-                .instrument(info_span!("Client", %addr)).await?;
+            async {
+                let result = self.handle_raw(&buffer[..length]).await;
+                if let Err(e) = result {
+                    warn!(error = %e, "Error while parsing packet");
+                }
+            }
+            .instrument(info_span!("Client", %addr))
+            .await;
         }
     }
 
