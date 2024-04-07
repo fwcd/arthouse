@@ -1,12 +1,13 @@
+mod adapter;
+
 use std::{net::SocketAddr, str::FromStr};
 
+use adapter::ArtNetAdapter;
 use anyhow::Result;
-use artnet_protocol::ArtCommand;
 use clap::Parser;
 use lighthouse_client::{protocol::Authentication, Lighthouse, LIGHTHOUSE_URL};
 use socket2::{Domain, Socket, Type};
 use tokio::net::UdpSocket;
-use tracing::{debug, info};
 
 #[derive(Parser)]
 #[command(version)]
@@ -39,13 +40,6 @@ async fn main() -> Result<()> {
     let std_socket = std::net::UdpSocket::from(s2_socket);
     let tokio_socket = UdpSocket::from_std(std_socket)?;
 
-    info!("Listening for Art-Net packets on {} (UDP)", tokio_socket.local_addr()?);
-    loop {
-        // TODO: Handle errors
-        let mut buffer = [0u8; 1024];
-        let (length, addr) = tokio_socket.recv_from(&mut buffer).await?;
-        let command = ArtCommand::from_buffer(&buffer[..length])?;
-
-        debug!(%addr, ?command, "Received command");
-    }
+    let adapter = ArtNetAdapter::new(lh, tokio_socket);
+    adapter.run().await
 }
