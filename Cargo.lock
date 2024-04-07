@@ -91,6 +91,7 @@ name = "arthouse"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "artnet_protocol",
  "clap",
  "dotenvy",
  "futures",
@@ -98,6 +99,16 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "artnet_protocol"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "536b2b9cae7ceb995cb11db1d5ec39b1eb305c557e36da01ea32de0c723920be"
+dependencies = [
+ "bitflags 2.5.0",
+ "byteorder",
 ]
 
 [[package]]
