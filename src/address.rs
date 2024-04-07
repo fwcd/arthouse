@@ -6,14 +6,17 @@ pub struct DmxAddress(u32);
 impl DmxAddress {
     pub const ZERO: Self = Self(0);
 
+    #[inline]
     pub fn new(universe: u16, channel: u8) -> Self {
         Self(((universe as u32) << 8) | (channel as u32))
     }
 
+    #[inline]
     pub fn universe(self) -> u16 {
         (self.0 >> 8) as u16
     }
 
+    #[inline]
     pub fn channel(self) -> u8 {
         (self.0 & 0xFF) as u8
     }
