@@ -1,5 +1,6 @@
 mod adapter;
 mod address;
+mod utils;
 
 use std::{net::SocketAddr, str::FromStr};
 
