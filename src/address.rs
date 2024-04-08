@@ -1,6 +1,6 @@
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct DmxAddress(u32);
 
 impl DmxAddress {
@@ -19,6 +19,11 @@ impl DmxAddress {
     #[inline]
     pub fn channel(self) -> u8 {
         (self.0 & 0xFF) as u8
+    }
+
+    #[inline]
+    pub fn value(self) -> u32 {
+        self.0
     }
 }
 
@@ -48,11 +53,27 @@ impl Add<u32> for DmxAddress {
     }
 }
 
+impl Add<DmxAddress> for DmxAddress {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self {
+        Self(self.0 + rhs.0)
+    }
+}
+
 impl Sub<u32> for DmxAddress {
     type Output = Self;
 
     fn sub(self, rhs: u32) -> Self {
         Self(self.0 - rhs)
+    }
+}
+
+impl Sub<DmxAddress> for DmxAddress {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self {
+        Self(self.0 - rhs.0)
     }
 }
 
@@ -62,9 +83,21 @@ impl AddAssign<u32> for DmxAddress {
     }
 }
 
+impl AddAssign<DmxAddress> for DmxAddress {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0;
+    }
+}
+
 impl SubAssign<u32> for DmxAddress {
     fn sub_assign(&mut self, rhs: u32) {
         self.0 -= rhs;
+    }
+}
+
+impl SubAssign<DmxAddress> for DmxAddress {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.0 -= rhs.0;
     }
 }
 
