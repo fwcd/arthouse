@@ -45,22 +45,20 @@ impl ArtNetAdapter {
     async fn handle_command(&mut self, command: ArtCommand) -> Result<()> {
         match command {
             ArtCommand::Output(output) => {
-                let port_address = output.port_address.into();
+                let universe = u16::from(output.port_address) as usize;
                 info! {
                     version = ?output.version,
                     sequence = output.sequence,
-                    port_address = port_address,
+                    universe = universe,
                     length = *output.length,
                     "Handling output"
                 };
-                let packet_range = DmxAddress::new(port_address, 0)..DmxAddress::new(port_address + 1, 0);
+                let packet_range = DmxAddress::new(universe, 0)..DmxAddress::new(universe + 1, 0);
                 let address_range = self.address_range();
                 if let Some(relevant_range) = packet_range.intersect(address_range) {
                     let dmx_data = output.data.as_ref();
-                    // TODO: Once the Step trait is stabilitized, we could
-                    // implement it for DmxAddress and iterate relevant_range directly
-                    for address_value in relevant_range.start.value()..relevant_range.end.value() {
-                        let address = DmxAddress::from(address_value);
+                    for value in relevant_range.start.value()..relevant_range.end.value() {
+                        let address = DmxAddress::from(value);
                         let index = self.frame_index_of(address);
                         self.frame[index] = dmx_data[address.channel() as usize];
                     }
@@ -81,11 +79,11 @@ impl ArtNetAdapter {
     }
 
     fn end_address(&self) -> DmxAddress {
-        self.start_address + (LIGHTHOUSE_BYTES as u32)
+        self.start_address + LIGHTHOUSE_BYTES
     }
 
     fn frame_index_of(&self, dmx_address: DmxAddress) -> usize {
-        (dmx_address - self.start_address).value() as usize
+        (dmx_address - self.start_address).value()
     }
 
     async fn update_lighthouse(&mut self) -> Result<()> {

@@ -34,10 +34,10 @@ struct Args {
     port: u16,
     /// The first DMX universe (Art-Net port address) to use.
     #[arg(short, long, env = "ARTHOUSE_UNIVERSE", default_value_t = 0)]
-    universe: u16,
+    universe: usize,
     /// The first DMX channel to use.
     #[arg(short, long, env = "ARTHOUSE_CHANNEL", default_value_t = 0)]
-    channel: u16,
+    channel: usize,
 }
 
 #[tokio::main]

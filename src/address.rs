@@ -1,28 +1,28 @@
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct DmxAddress(u32);
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct DmxAddress(usize);
 
 impl DmxAddress {
     pub const ZERO: Self = Self(0);
 
     #[inline]
-    pub fn new(universe: u16, channel: u16) -> Self {
-        Self(((universe as u32) << 9) | (channel as u32))
+    pub fn new(universe: usize, channel: usize) -> Self {
+        Self((universe << 9) | channel)
     }
 
     #[inline]
-    pub fn universe(self) -> u16 {
-        (self.0 >> 9) as u16
+    pub fn universe(self) -> usize {
+        self.0 >> 9
     }
 
     #[inline]
-    pub fn channel(self) -> u16 {
-        (self.0 & 0x1FF) as u16
+    pub fn channel(self) -> usize {
+        self.0 & 0x1FF
     }
 
     #[inline]
-    pub fn value(self) -> u32 {
+    pub fn value(self) -> usize {
         self.0
     }
 }
@@ -33,28 +33,28 @@ impl Default for DmxAddress {
     }
 }
 
-impl From<u32> for DmxAddress {
-    fn from(value: u32) -> Self {
+impl From<usize> for DmxAddress {
+    fn from(value: usize) -> Self {
         Self(value)
     }
 }
 
-impl From<(u16, u16)> for DmxAddress {
-    fn from((universe, channel): (u16, u16)) -> Self {
+impl From<(usize, usize)> for DmxAddress {
+    fn from((universe, channel): (usize, usize)) -> Self {
         Self::new(universe, channel)
     }
 }
 
-impl From<DmxAddress> for (u16, u16) {
+impl From<DmxAddress> for (usize, usize) {
     fn from(address: DmxAddress) -> Self {
         (address.universe(), address.channel())
     }
 }
 
-impl Add<u32> for DmxAddress {
+impl Add<usize> for DmxAddress {
     type Output = Self;
 
-    fn add(self, rhs: u32) -> Self {
+    fn add(self, rhs: usize) -> Self {
         Self(self.0 + rhs)
     }
 }
@@ -67,10 +67,10 @@ impl Add<DmxAddress> for DmxAddress {
     }
 }
 
-impl Sub<u32> for DmxAddress {
+impl Sub<usize> for DmxAddress {
     type Output = Self;
 
-    fn sub(self, rhs: u32) -> Self {
+    fn sub(self, rhs: usize) -> Self {
         Self(self.0 - rhs)
     }
 }
@@ -83,8 +83,8 @@ impl Sub<DmxAddress> for DmxAddress {
     }
 }
 
-impl AddAssign<u32> for DmxAddress {
-    fn add_assign(&mut self, rhs: u32) {
+impl AddAssign<usize> for DmxAddress {
+    fn add_assign(&mut self, rhs: usize) {
         self.0 += rhs;
     }
 }
@@ -95,8 +95,8 @@ impl AddAssign<DmxAddress> for DmxAddress {
     }
 }
 
-impl SubAssign<u32> for DmxAddress {
-    fn sub_assign(&mut self, rhs: u32) {
+impl SubAssign<usize> for DmxAddress {
+    fn sub_assign(&mut self, rhs: usize) {
         self.0 -= rhs;
     }
 }
@@ -117,7 +117,7 @@ mod tests {
         assert_eq!(DmxAddress::new(2, 3).0, 0b10_000000011);
         assert_eq!(DmxAddress::new(2, 3).universe(), 2);
         assert_eq!(DmxAddress::new(2, 3).channel(), 3);
-        assert_eq!(<(u16, u16)>::from(DmxAddress::ZERO), (0, 0));
-        assert_eq!(<(u16, u16)>::from(DmxAddress::new(16, 510) + 3), (17, 1));
+        assert_eq!(<(usize, usize)>::from(DmxAddress::ZERO), (0, 0));
+        assert_eq!(<(usize, usize)>::from(DmxAddress::new(16, 510) + 3), (17, 1));
     }
 }
