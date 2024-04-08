@@ -113,10 +113,11 @@ mod tests {
 
     #[test]
     fn addresses() {
-        assert_eq!(DmxAddress::new(2, 3).0, 0x0203);
+        // Notice the extra 9th bit, here -------v
+        assert_eq!(DmxAddress::new(2, 3).0, 0b10_000000011);
         assert_eq!(DmxAddress::new(2, 3).universe(), 2);
         assert_eq!(DmxAddress::new(2, 3).channel(), 3);
         assert_eq!(<(u16, u16)>::from(DmxAddress::ZERO), (0, 0));
-        assert_eq!(<(u16, u16)>::from(DmxAddress::new(16, 254) + 3), (17, 1));
+        assert_eq!(<(u16, u16)>::from(DmxAddress::new(16, 510) + 3), (17, 1));
     }
 }
