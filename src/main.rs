@@ -37,7 +37,7 @@ struct Args {
     universe: u16,
     /// The first DMX channel to use.
     #[arg(short, long, env = "ARTHOUSE_CHANNEL", default_value_t = 0)]
-    channel: u8,
+    channel: u16,
 }
 
 #[tokio::main]

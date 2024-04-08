@@ -7,18 +7,18 @@ impl DmxAddress {
     pub const ZERO: Self = Self(0);
 
     #[inline]
-    pub fn new(universe: u16, channel: u8) -> Self {
-        Self(((universe as u32) << 8) | (channel as u32))
+    pub fn new(universe: u16, channel: u16) -> Self {
+        Self(((universe as u32) << 9) | (channel as u32))
     }
 
     #[inline]
     pub fn universe(self) -> u16 {
-        (self.0 >> 8) as u16
+        (self.0 >> 9) as u16
     }
 
     #[inline]
-    pub fn channel(self) -> u8 {
-        (self.0 & 0xFF) as u8
+    pub fn channel(self) -> u16 {
+        (self.0 & 0x1FF) as u16
     }
 
     #[inline]
@@ -39,13 +39,13 @@ impl From<u32> for DmxAddress {
     }
 }
 
-impl From<(u16, u8)> for DmxAddress {
-    fn from((universe, channel): (u16, u8)) -> Self {
+impl From<(u16, u16)> for DmxAddress {
+    fn from((universe, channel): (u16, u16)) -> Self {
         Self::new(universe, channel)
     }
 }
 
-impl From<DmxAddress> for (u16, u8) {
+impl From<DmxAddress> for (u16, u16) {
     fn from(address: DmxAddress) -> Self {
         (address.universe(), address.channel())
     }
@@ -116,7 +116,7 @@ mod tests {
         assert_eq!(DmxAddress::new(2, 3).0, 0x0203);
         assert_eq!(DmxAddress::new(2, 3).universe(), 2);
         assert_eq!(DmxAddress::new(2, 3).channel(), 3);
-        assert_eq!(<(u16, u8)>::from(DmxAddress::ZERO), (0, 0));
-        assert_eq!(<(u16, u8)>::from(DmxAddress::new(16, 254) + 3), (17, 1));
+        assert_eq!(<(u16, u16)>::from(DmxAddress::ZERO), (0, 0));
+        assert_eq!(<(u16, u16)>::from(DmxAddress::new(16, 254) + 3), (17, 1));
     }
 }
