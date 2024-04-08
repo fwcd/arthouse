@@ -11,7 +11,7 @@ artnet_protocol = "0.4.2"
 clap = { version = "4.5.4", features = ["derive", "env"] }
 dotenvy = "0.15.7"
 futures = "0.3.30"
-lighthouse-client = "3.1.0"
+lighthouse-client = "3.2.0"
 socket2 = "0.5.6"
 tokio = { version = "1.37.0", features = ["rt-multi-thread", "macros"] }
 tracing = "0.1.40"

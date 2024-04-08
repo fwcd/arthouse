@@ -33,6 +33,12 @@ impl Default for DmxAddress {
     }
 }
 
+impl From<u32> for DmxAddress {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
 impl From<(u16, u8)> for DmxAddress {
     fn from((universe, channel): (u16, u8)) -> Self {
         Self::new(universe, channel)
