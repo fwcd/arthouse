@@ -2,16 +2,26 @@ use std::ops::Range;
 
 use crate::{address::DmxAddress, constants::DMX_CHANNELS};
 
-/// A conceptually contiguous range of DMX channels across consecutive
-/// universes, potentially with padding inbetween to improve alignment.
+/// A range of DMX channels across consecutive universes, potentially with
+/// padding to avoid splitting groups of channels across universes. For a group
+/// size of 1, the allocation of channels is fully contiguous.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct DmxAllocation {
+    /// The first DMX channel to use.
     start_address: DmxAddress,
+    /// The total number of DMX channels.
     count: usize,
+    /// The number of DMX channels per group (which cannot be split across universes).
     grouping: usize,
 }
 
 impl DmxAllocation {
+    /// Creates a new DMX allocation from the given start address, channel count and group size.
+    pub fn new(start_address: DmxAddress, count: usize, grouping: usize) -> Self {
+        Self { start_address, count, grouping }
+    }
+
+    /// Fetches the logical index of the channel for the given DMX address, if it exists.
     pub fn index_of(&self, address: DmxAddress) -> Option<usize> {
         let range = self.address_range();
         if range.contains(&address) {
@@ -40,6 +50,8 @@ impl DmxAllocation {
         }
     }
 
+    /// Fetches the allocated (contiguous) range of DMX channels in the given
+    /// universe. May be empty, e.g. if the universe is outside the allocation.
     pub fn address_range_in(&self, universe: usize) -> Range<DmxAddress> {
         let start = if universe == self.start_address.universe() {
             self.start_address
@@ -66,14 +78,17 @@ impl DmxAllocation {
         self.end_address().channel()
     }
     
+    /// Fetches the total range of allocated DMX channels.
     pub fn address_range(&self) -> Range<DmxAddress> {
         self.start_address()..self.end_address()
     }
 
+    /// Fetches the first allocated DMX channel (inclusive start).
     pub fn start_address(&self) -> DmxAddress {
         self.start_address
     }
 
+    /// Fetches the DMX channel past the last allocated channel (exclusive end).
     pub fn end_address(&self) -> DmxAddress {
         let start_channels = self.start_universe_channel_count();
         let mid_channels = self.mid_universe_channel_count();
@@ -93,5 +108,21 @@ impl DmxAllocation {
 
     fn mid_universe_channel_count(&self) -> usize {
         DMX_CHANNELS - DMX_CHANNELS % self.grouping
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{address::DmxAddress, allocation::DmxAllocation, constants::DMX_CHANNELS};
+
+    #[test]
+    fn full_universe() {
+        let allocation = DmxAllocation::new(DmxAddress::new(1, 0), DMX_CHANNELS, 1);
+        assert!(allocation.index_of(DmxAddress::new(0, 0)).is_none());
+        assert!(allocation.index_of(DmxAddress::new(0, DMX_CHANNELS - 1)).is_none());
+        assert_eq!(allocation.index_of(DmxAddress::new(1, 0)), Some(0));
+        assert_eq!(allocation.index_of(DmxAddress::new(1, 1)), Some(1));
+        assert_eq!(allocation.index_of(DmxAddress::new(1, DMX_CHANNELS - 1)), Some(DMX_CHANNELS - 1));
+        assert!(allocation.index_of(DmxAddress::new(2, 0)).is_none());
     }
 }
