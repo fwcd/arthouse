@@ -1,6 +1,6 @@
 [package]
 name = "arthouse"
-version = "1.0.2"
+version = "2.0.0"
 description = "Art-Net (DMX over UDP/IP) adapter for Project Lighthouse"
 edition = "2021"
 license = "GPL-3.0"

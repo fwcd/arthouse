@@ -88,7 +88,7 @@ checksum = "0952808a6c2afd1aa8947271f3a60f1a6763c7b912d210184c5149b5cf147247"
 
 [[package]]
 name = "arthouse"
-version = "1.0.2"
+version = "2.0.0"
 dependencies = [
  "anyhow",
  "artnet_protocol",
