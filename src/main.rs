@@ -1,5 +1,7 @@
 mod adapter;
 mod address;
+mod allocation;
+mod constants;
 mod utils;
 
 use std::{net::{IpAddr, SocketAddr}, str::FromStr};
