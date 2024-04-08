@@ -1,7 +1,10 @@
 [package]
 name = "arthouse"
 version = "1.0.0"
+description = "Art-Net (DMX over UDP/IP) adapter for Project Lighthouse"
 edition = "2021"
+license = "GPL-3.0"
+repository = "https://github.com/fwcd/arthouse"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
