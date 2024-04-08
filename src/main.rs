@@ -2,7 +2,7 @@ mod adapter;
 mod address;
 mod utils;
 
-use std::{net::SocketAddr, str::FromStr};
+use std::{net::{IpAddr, SocketAddr}, str::FromStr};
 
 use adapter::ArtNetAdapter;
 use address::DmxAddress;
@@ -26,6 +26,12 @@ struct Args {
     /// The Project Lighthouse server URL.
     #[arg(long, env = "LIGHTHOUSE_URL", default_value = LIGHTHOUSE_URL)]
     url: String,
+    /// The host on which to bind the Art-Net/UDP socket.
+    #[arg(long, env = "ARTHOUSE_HOST", default_value = "0.0.0.0")]
+    host: String,
+    /// The port on which to bind the Art-Net/UDP socket.
+    #[arg(long, env = "ARTHOUSE_PORT", default_value_t = 6454)]
+    port: u16,
     /// The first DMX universe (Art-Net port address) to use.
     #[arg(short, long, env = "ARTHOUSE_UNIVERSE", default_value_t = 0)]
     universe: u16,
@@ -46,7 +52,7 @@ async fn main() -> Result<()> {
     let s2_socket = Socket::new(Domain::IPV4, Type::DGRAM, None)?;
     s2_socket.set_broadcast(true)?;
     s2_socket.set_reuse_port(true)?;
-    s2_socket.bind(&SocketAddr::from_str("0.0.0.0:6454")?.into())?;
+    s2_socket.bind(&SocketAddr::from((IpAddr::from_str(&args.host)?, args.port)).into())?;
 
     let std_socket = std::net::UdpSocket::from(s2_socket);
     let tokio_socket = UdpSocket::from_std(std_socket)?;
