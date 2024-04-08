@@ -53,7 +53,7 @@ impl ArtNetAdapter {
                 if let Some(relevant_range) = packet_range.intersect(address_range) {
                     let dmx_data = output.data.as_ref();
                     // TODO: Once the Step trait is stabilitized, we could
-                    // implement it for DmxAddress directly
+                    // implement it for DmxAddress and iterate relevant_range directly
                     for address_value in relevant_range.start.value()..relevant_range.end.value() {
                         let address = DmxAddress::from(address_value);
                         let index = self.frame_index_of(address);
