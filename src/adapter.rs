@@ -43,12 +43,17 @@ impl ArtNetAdapter {
     }
 
     async fn handle_command(&mut self, command: ArtCommand) -> Result<()> {
-        info!(?command, "Handling command");
-
         match command {
             ArtCommand::Output(output) => {
-                let universe = output.port_address.into();
-                let packet_range = DmxAddress::new(universe, 0)..DmxAddress::new(universe + 1, 0);
+                let port_address = output.port_address.into();
+                info! {
+                    version = ?output.version,
+                    sequence = output.sequence,
+                    port_address = port_address,
+                    length = *output.length,
+                    "Handling output"
+                };
+                let packet_range = DmxAddress::new(port_address, 0)..DmxAddress::new(port_address + 1, 0);
                 let address_range = self.address_range();
                 if let Some(relevant_range) = packet_range.intersect(address_range) {
                     let dmx_data = output.data.as_ref();
@@ -62,7 +67,10 @@ impl ArtNetAdapter {
                     self.update_lighthouse().await?;
                 }
             },
-            _ => {},
+            _ => info! {
+                ?command,
+                "Ignoring"
+            },
         }
 
         Ok(())
