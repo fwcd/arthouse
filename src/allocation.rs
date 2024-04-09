@@ -120,15 +120,15 @@ mod tests {
         // A simple contiguous allocation of 512 channels in a single universe
         let allocation = DmxAllocation::new(DmxAddress::new(1, 0), DMX_CHANNELS, 1);
 
-        assert_eq!(allocation.start_universe_channel_count(), DMX_CHANNELS);
+        assert_eq!(allocation.start_universe_channel_count(), 512);
         assert_eq!(allocation.start_address(), DmxAddress::new(1, 0));
         assert_eq!(allocation.end_address(), DmxAddress::new(2, 0));
 
         assert!(allocation.index_of(DmxAddress::new(0, 0)).is_none());
-        assert!(allocation.index_of(DmxAddress::new(0, DMX_CHANNELS - 1)).is_none());
+        assert!(allocation.index_of(DmxAddress::new(0, 511)).is_none());
         assert_eq!(allocation.index_of(DmxAddress::new(1, 0)), Some(0));
         assert_eq!(allocation.index_of(DmxAddress::new(1, 1)), Some(1));
-        assert_eq!(allocation.index_of(DmxAddress::new(1, DMX_CHANNELS - 1)), Some(DMX_CHANNELS - 1));
+        assert_eq!(allocation.index_of(DmxAddress::new(1, 511)), Some(511));
         assert!(allocation.index_of(DmxAddress::new(2, 0)).is_none());
     }
 
@@ -139,19 +139,19 @@ mod tests {
         // last group to universe 2 to ensure that no group is split across universes.
         let allocation = DmxAllocation::new(DmxAddress::new(1, 0), DMX_CHANNELS, 3);
 
-        assert_eq!(allocation.start_universe_channel_count(), DMX_CHANNELS - 2);
+        assert_eq!(allocation.start_universe_channel_count(), 510);
         assert_eq!(allocation.end_universe_channel_count(), 2); // Last group has only 2 channels (512 % 3 == 2)
         assert_eq!(allocation.start_address(), DmxAddress::new(1, 0));
         assert_eq!(allocation.end_address(), DmxAddress::new(2, 2));
 
         assert!(allocation.index_of(DmxAddress::new(0, 0)).is_none());
-        assert!(allocation.index_of(DmxAddress::new(0, DMX_CHANNELS - 1)).is_none());
+        assert!(allocation.index_of(DmxAddress::new(0, 511)).is_none());
         assert_eq!(allocation.index_of(DmxAddress::new(1, 0)), Some(0));
         assert_eq!(allocation.index_of(DmxAddress::new(1, 1)), Some(1));
-        assert_eq!(allocation.index_of(DmxAddress::new(1, DMX_CHANNELS - 3)), Some(DMX_CHANNELS - 3));
-        assert!(allocation.index_of(DmxAddress::new(1, DMX_CHANNELS - 2)).is_none());
-        assert_eq!(allocation.index_of(DmxAddress::new(2, 0)), Some(DMX_CHANNELS - 2));
-        assert_eq!(allocation.index_of(DmxAddress::new(2, 1)), Some(DMX_CHANNELS - 1));
+        assert_eq!(allocation.index_of(DmxAddress::new(1, 509)), Some(509));
+        assert!(allocation.index_of(DmxAddress::new(1, 510)).is_none());
+        assert_eq!(allocation.index_of(DmxAddress::new(2, 0)), Some(510));
+        assert_eq!(allocation.index_of(DmxAddress::new(2, 1)), Some(511));
         assert!(allocation.index_of(DmxAddress::new(2, 2)).is_none());
     }
 }
