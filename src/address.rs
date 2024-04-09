@@ -120,4 +120,11 @@ mod tests {
         assert_eq!(<(usize, usize)>::from(DmxAddress::ZERO), (0, 0));
         assert_eq!(<(usize, usize)>::from(DmxAddress::new(16, 510) + 3), (17, 1));
     }
+
+    #[test]
+    fn carry() {
+        assert_eq!(DmxAddress::new(0, 511) + 1, DmxAddress::new(1, 0));
+        assert_eq!(DmxAddress::new(0, 512), DmxAddress::new(1, 0));
+        assert_eq!(DmxAddress::new(1, 2) + 1025, DmxAddress::new(3, 3));
+    }
 }
