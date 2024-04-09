@@ -8,9 +8,10 @@ use std::{net::{IpAddr, SocketAddr}, str::FromStr};
 
 use adapter::ArtNetAdapter;
 use address::DmxAddress;
+use allocation::DmxAllocation;
 use anyhow::Result;
 use clap::Parser;
-use lighthouse_client::{protocol::Authentication, Lighthouse, LIGHTHOUSE_URL};
+use lighthouse_client::{protocol::{Authentication, LIGHTHOUSE_BYTES, LIGHTHOUSE_COLS}, Lighthouse, LIGHTHOUSE_URL};
 use socket2::{Domain, Socket, Type};
 use tokio::net::UdpSocket;
 
@@ -60,6 +61,7 @@ async fn main() -> Result<()> {
     let tokio_socket = UdpSocket::from_std(std_socket)?;
 
     let start_address = DmxAddress::new(args.universe, args.channel);
-    let adapter = ArtNetAdapter::new(lh, tokio_socket, start_address);
+    let allocation = DmxAllocation::new(start_address, LIGHTHOUSE_BYTES, LIGHTHOUSE_COLS * 3);
+    let adapter = ArtNetAdapter::new(lh, tokio_socket, allocation);
     adapter.run().await
 }

@@ -1,23 +1,21 @@
-use std::ops::Range;
-
 use anyhow::Result;
 use artnet_protocol::ArtCommand;
 use lighthouse_client::{protocol::LIGHTHOUSE_BYTES, Lighthouse, TokioWebSocket};
 use tokio::net::UdpSocket;
 use tracing::{info, info_span, warn, Instrument};
 
-use crate::{address::DmxAddress, utils::RangeExt};
+use crate::{address::DmxAddress, allocation::DmxAllocation};
 
 pub struct ArtNetAdapter {
     lh: Lighthouse<TokioWebSocket>,
     socket: UdpSocket,
-    start_address: DmxAddress,
+    allocation: DmxAllocation,
     frame: [u8; LIGHTHOUSE_BYTES],
 }
 
 impl ArtNetAdapter {
-    pub fn new(lh: Lighthouse<TokioWebSocket>, socket: UdpSocket, start_address: DmxAddress) -> Self {
-        Self { lh, socket, start_address, frame: [0u8; LIGHTHOUSE_BYTES] }
+    pub fn new(lh: Lighthouse<TokioWebSocket>, socket: UdpSocket, allocation: DmxAllocation) -> Self {
+        Self { lh, socket, allocation, frame: [0u8; LIGHTHOUSE_BYTES] }
     }
 
     pub async fn run(mut self) -> Result<()> {
@@ -53,13 +51,15 @@ impl ArtNetAdapter {
                     length = *output.length,
                     "Handling output"
                 };
-                let packet_range = DmxAddress::new(universe, 0)..DmxAddress::new(universe + 1, 0);
-                let address_range = self.address_range();
-                if let Some(relevant_range) = packet_range.intersect(address_range) {
+                let range = self.allocation.address_range_in(universe);
+                if !range.is_empty() {
                     let dmx_data = output.data.as_ref();
-                    for value in relevant_range.start.value()..relevant_range.end.value() {
+                    // TODO: Once the Step trait is stabilitized we could
+                    // implement it for DmxAddress and make the range itself
+                    // iterable.
+                    for value in range.start.value()..range.end.value() {
                         let address = DmxAddress::from(value);
-                        let index = self.frame_index_of(address);
+                        let index = self.allocation.index_of(address).unwrap();
                         self.frame[index] = dmx_data[address.channel() as usize];
                     }
                     self.update_lighthouse().await?;
@@ -72,18 +72,6 @@ impl ArtNetAdapter {
         }
 
         Ok(())
-    }
-
-    fn address_range(&self) -> Range<DmxAddress> {
-        self.start_address..self.end_address()
-    }
-
-    fn end_address(&self) -> DmxAddress {
-        self.start_address + LIGHTHOUSE_BYTES
-    }
-
-    fn frame_index_of(&self, dmx_address: DmxAddress) -> usize {
-        (dmx_address - self.start_address).value()
     }
 
     async fn update_lighthouse(&mut self) -> Result<()> {
