@@ -33,7 +33,7 @@ impl DmxAllocation {
                     (preceding, index, remaining)
                 } else {
                     let preceding_start = self.start_universe_channel_count();
-                    let preceding_mid = (address.universe() - range.start.universe()) * self.mid_universe_channel_count();
+                    let preceding_mid = (address.universe() - range.start.universe() - 1) * self.mid_universe_channel_count();
                     let preceding = preceding_start + preceding_mid;
                     let index = address.channel();
                     let remaining = if address.universe() == range.end.universe() {
@@ -96,7 +96,7 @@ impl DmxAllocation {
             self.start_address + self.count
         } else {
             let universes = (self.count - start_channels).div_ceil(mid_channels);
-            let preceding = start_channels + universes * mid_channels;
+            let preceding = start_channels + (universes - 1) * mid_channels;
             DmxAddress::new(self.start_address.universe() + universes, self.count - preceding)
         }
     }
@@ -117,12 +117,41 @@ mod tests {
 
     #[test]
     fn full_universe() {
+        // A simple contiguous allocation of 512 channels in a single universe
         let allocation = DmxAllocation::new(DmxAddress::new(1, 0), DMX_CHANNELS, 1);
+
+        assert_eq!(allocation.start_universe_channel_count(), DMX_CHANNELS);
+        assert_eq!(allocation.start_address(), DmxAddress::new(1, 0));
+        assert_eq!(allocation.end_address(), DmxAddress::new(2, 0));
+
         assert!(allocation.index_of(DmxAddress::new(0, 0)).is_none());
         assert!(allocation.index_of(DmxAddress::new(0, DMX_CHANNELS - 1)).is_none());
         assert_eq!(allocation.index_of(DmxAddress::new(1, 0)), Some(0));
         assert_eq!(allocation.index_of(DmxAddress::new(1, 1)), Some(1));
         assert_eq!(allocation.index_of(DmxAddress::new(1, DMX_CHANNELS - 1)), Some(DMX_CHANNELS - 1));
         assert!(allocation.index_of(DmxAddress::new(2, 0)).is_none());
+    }
+
+    #[test]
+    fn groups_of_three() {
+        // 512 channels, starting in universe 1, using groups of 3, like e.g. for RGB.
+        // This introduces some padding at the end of universe 1 and moves the
+        // last group to universe 2 to ensure that no group is split across universes.
+        let allocation = DmxAllocation::new(DmxAddress::new(1, 0), DMX_CHANNELS, 3);
+
+        assert_eq!(allocation.start_universe_channel_count(), DMX_CHANNELS - 2);
+        assert_eq!(allocation.end_universe_channel_count(), 2); // Last group has only 2 channels (512 % 3 == 2)
+        assert_eq!(allocation.start_address(), DmxAddress::new(1, 0));
+        assert_eq!(allocation.end_address(), DmxAddress::new(2, 2));
+
+        assert!(allocation.index_of(DmxAddress::new(0, 0)).is_none());
+        assert!(allocation.index_of(DmxAddress::new(0, DMX_CHANNELS - 1)).is_none());
+        assert_eq!(allocation.index_of(DmxAddress::new(1, 0)), Some(0));
+        assert_eq!(allocation.index_of(DmxAddress::new(1, 1)), Some(1));
+        assert_eq!(allocation.index_of(DmxAddress::new(1, DMX_CHANNELS - 3)), Some(DMX_CHANNELS - 3));
+        assert!(allocation.index_of(DmxAddress::new(1, DMX_CHANNELS - 2)).is_none());
+        assert_eq!(allocation.index_of(DmxAddress::new(2, 0)), Some(DMX_CHANNELS - 2));
+        assert_eq!(allocation.index_of(DmxAddress::new(2, 1)), Some(DMX_CHANNELS - 1));
+        assert!(allocation.index_of(DmxAddress::new(2, 2)).is_none());
     }
 }
