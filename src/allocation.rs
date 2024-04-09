@@ -113,6 +113,8 @@ impl DmxAllocation {
 
 #[cfg(test)]
 mod tests {
+    use lighthouse_client::protocol::{LIGHTHOUSE_BYTES, LIGHTHOUSE_COLS};
+
     use crate::{address::DmxAddress, allocation::DmxAllocation, constants::DMX_CHANNELS};
 
     #[test]
@@ -153,5 +155,27 @@ mod tests {
         assert_eq!(allocation.index_of(DmxAddress::new(2, 0)), Some(510));
         assert_eq!(allocation.index_of(DmxAddress::new(2, 1)), Some(511));
         assert!(allocation.index_of(DmxAddress::new(2, 2)).is_none());
+    }
+
+    #[test]
+    fn lighthouse() {
+        // 14 * 28 * 3 = 1176 channels, starting in universe 1, using groups of 28 * 3 = 84
+        // to ensure that full rows of pixels are grouped together.
+        let allocation = DmxAllocation::new(DmxAddress::new(1, 0), LIGHTHOUSE_BYTES, LIGHTHOUSE_COLS * 3);
+
+        assert_eq!(allocation.start_universe_channel_count(), 504); // DMX_CHANNELS = 512 rounded down to multiple of 84
+        assert_eq!(allocation.mid_universe_channel_count(), 504); 
+        assert_eq!(allocation.end_universe_channel_count(), 168); // 1176 - 2 * 504
+    }
+
+    #[test]
+    fn misaligned_lighthouse() {
+        // 14 * 28 * 3 = 1176 channels, starting in universe 1, using groups of 28 * 3 = 84
+        // to ensure that full rows of pixels are grouped together.
+        let allocation = DmxAllocation::new(DmxAddress::new(1, 200), LIGHTHOUSE_BYTES, LIGHTHOUSE_COLS * 3);
+
+        assert_eq!(allocation.start_universe_channel_count(), 252); // 512 - 200 rounded down to multiple of 84
+        assert_eq!(allocation.mid_universe_channel_count(), 504); // 512 rounded down to multiple of 84
+        assert_eq!(allocation.end_universe_channel_count(), 420); // 1176 - 252 - 504
     }
 }
