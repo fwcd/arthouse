@@ -41,6 +41,9 @@ struct Args {
     /// The first DMX channel to use.
     #[arg(short, long, env = "ARTHOUSE_CHANNEL", default_value_t = 0)]
     channel: usize,
+    /// Group size for which channels will not be split across universes.
+    #[arg(short, long, env = "ARTHOUSE_GROUPING", default_value_t = LIGHTHOUSE_COLS * 3)]
+    grouping: usize,
 }
 
 #[tokio::main]
@@ -61,7 +64,7 @@ async fn main() -> Result<()> {
     let tokio_socket = UdpSocket::from_std(std_socket)?;
 
     let start_address = DmxAddress::new(args.universe, args.channel);
-    let allocation = DmxAllocation::new(start_address, LIGHTHOUSE_BYTES, LIGHTHOUSE_COLS * 3);
+    let allocation = DmxAllocation::new(start_address, LIGHTHOUSE_BYTES, args.grouping);
     let adapter = ArtNetAdapter::new(lh, tokio_socket, allocation);
     adapter.run().await
 }
