@@ -60,7 +60,7 @@ impl ArtNetAdapter {
                     for value in range.start.value()..range.end.value() {
                         let address = DmxAddress::from(value);
                         let index = self.allocation.index_of(address).unwrap();
-                        self.frame[index] = dmx_data[address.channel() as usize];
+                        self.frame[index] = dmx_data[address.channel()];
                     }
                     self.update_lighthouse().await?;
                 }
