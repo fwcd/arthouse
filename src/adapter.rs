@@ -2,7 +2,7 @@ use anyhow::Result;
 use artnet_protocol::ArtCommand;
 use lighthouse_client::{protocol::LIGHTHOUSE_BYTES, Lighthouse, TokioWebSocket};
 use tokio::{net::UdpSocket, sync::mpsc};
-use tracing::{info, info_span, warn, Instrument};
+use tracing::{debug, info, info_span, warn, Instrument};
 
 use crate::{address::DmxAddress, allocation::DmxAllocation};
 
@@ -58,7 +58,7 @@ impl ArtNetAdapter {
         match command {
             ArtCommand::Output(output) => {
                 let universe = u16::from(output.port_address) as usize;
-                info! {
+                debug! {
                     version = ?output.version,
                     sequence = output.sequence,
                     universe = universe,
