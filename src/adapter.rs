@@ -1,3 +1,5 @@
+use std::{sync::{atomic::{AtomicUsize, Ordering}, Arc}, time::{Duration, Instant}};
+
 use anyhow::Result;
 use artnet_protocol::ArtCommand;
 use lighthouse_client::{protocol::LIGHTHOUSE_BYTES, Lighthouse, TokioWebSocket};
@@ -11,6 +13,7 @@ pub struct ArtNetAdapter {
     socket: UdpSocket,
     allocation: DmxAllocation,
     frame: [u8; LIGHTHOUSE_BYTES],
+    dropped_frames: Arc<AtomicUsize>,
     sender: mpsc::Sender<[u8; LIGHTHOUSE_BYTES]>,
     receiver: Option<mpsc::Receiver<[u8; LIGHTHOUSE_BYTES]>>,
 }
@@ -18,18 +21,27 @@ pub struct ArtNetAdapter {
 impl ArtNetAdapter {
     pub fn new(lh: Lighthouse<TokioWebSocket>, socket: UdpSocket, allocation: DmxAllocation) -> Self {
         let (sender, receiver) = mpsc::channel(1);
-        Self { lh: Some(lh), socket, allocation, frame: [0u8; LIGHTHOUSE_BYTES], sender, receiver: Some(receiver) }
+        Self { lh: Some(lh), socket, allocation, frame: [0u8; LIGHTHOUSE_BYTES], dropped_frames: Arc::new(AtomicUsize::new(0)), sender, receiver: Some(receiver) }
     }
 
     pub async fn run(mut self) -> Result<()> {
         // TODO: Factor out Lighthouse forwarder into separate structure?
         let mut lh = self.lh.take().unwrap();
         let mut receiver = self.receiver.take().unwrap();
+        let dropped_frames = self.dropped_frames.clone();
+        let mut last_warning = Instant::now();
         tokio::spawn(async move {
             while let Some(frame) = receiver.recv().await {
                 let result = lh.put_model(frame.into()).await;
                 if let Err(e) = result {
                     warn!(error = %e, "Error while sending frame to lighthouse")
+                }
+                if last_warning.elapsed() >= Duration::from_secs(1) {
+                    let dropped = dropped_frames.fetch_and(0, Ordering::Relaxed);
+                    if dropped > 0 {
+                        warn!(dropped_frames = dropped, "Lighthouse cannot keep up");
+                        last_warning = Instant::now();
+                    }
                 }
             }
         });
@@ -77,7 +89,7 @@ impl ArtNetAdapter {
                         self.frame[index] = dmx_data[address.channel()];
                     }
                     if let Err(_) = self.sender.try_send(self.frame) {
-                        warn!("Lighthouse cannot keep up, dropping frame");
+                        self.dropped_frames.fetch_add(1, Ordering::Relaxed);
                     }
                 }
             },
