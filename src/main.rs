@@ -14,6 +14,8 @@ use clap::Parser;
 use lighthouse_client::{protocol::{Authentication, LIGHTHOUSE_BYTES, LIGHTHOUSE_COLS}, Lighthouse, LIGHTHOUSE_URL};
 use socket2::{Domain, Socket, Type};
 use tokio::net::UdpSocket;
+use tracing::level_filters::LevelFilter;
+use tracing_subscriber::EnvFilter;
 
 #[derive(Parser)]
 #[command(version, after_help =
@@ -48,8 +50,11 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt().init();
     _ = dotenvy::dotenv();
+
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::builder().with_default_directive(LevelFilter::INFO.into()).from_env()?)
+        .init();
 
     let args = Args::parse();
     let auth = Authentication::new(&args.username, &args.token);
