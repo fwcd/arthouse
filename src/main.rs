@@ -58,7 +58,7 @@ async fn main() -> Result<()> {
 
     let args = Args::parse();
     let auth = Authentication::new(&args.username, &args.token);
-    let lh = Lighthouse::connect_with_tokio(auth).await?;
+    let lh = Lighthouse::connect_with_tokio_to(&args.url, auth).await?;
 
     let s2_socket = Socket::new(Domain::IPV4, Type::DGRAM, None)?;
     s2_socket.set_broadcast(true)?;
