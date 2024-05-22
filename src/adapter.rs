@@ -1,26 +1,40 @@
 use anyhow::Result;
 use artnet_protocol::ArtCommand;
 use lighthouse_client::{protocol::LIGHTHOUSE_BYTES, Lighthouse, TokioWebSocket};
-use tokio::net::UdpSocket;
+use tokio::{net::UdpSocket, sync::mpsc};
 use tracing::{info, info_span, warn, Instrument};
 
 use crate::{address::DmxAddress, allocation::DmxAllocation};
 
 pub struct ArtNetAdapter {
-    lh: Lighthouse<TokioWebSocket>,
+    lh: Option<Lighthouse<TokioWebSocket>>,
     socket: UdpSocket,
     allocation: DmxAllocation,
     frame: [u8; LIGHTHOUSE_BYTES],
+    sender: mpsc::Sender<[u8; LIGHTHOUSE_BYTES]>,
+    receiver: Option<mpsc::Receiver<[u8; LIGHTHOUSE_BYTES]>>,
 }
 
 impl ArtNetAdapter {
     pub fn new(lh: Lighthouse<TokioWebSocket>, socket: UdpSocket, allocation: DmxAllocation) -> Self {
-        Self { lh, socket, allocation, frame: [0u8; LIGHTHOUSE_BYTES] }
+        let (sender, receiver) = mpsc::channel(1);
+        Self { lh: Some(lh), socket, allocation, frame: [0u8; LIGHTHOUSE_BYTES], sender, receiver: Some(receiver) }
     }
 
     pub async fn run(mut self) -> Result<()> {
-        info!("Listening for Art-Net packets on {} (UDP)", self.socket.local_addr()?);
+        // TODO: Factor out Lighthouse forwarder into separate structure?
+        let mut lh = self.lh.take().unwrap();
+        let mut receiver = self.receiver.take().unwrap();
+        tokio::spawn(async move {
+            while let Some(frame) = receiver.recv().await {
+                let result = lh.put_model(frame.into()).await;
+                if let Err(e) = result {
+                    warn!(error = %e, "Error while sending frame to lighthouse")
+                }
+            }
+        });
 
+        info!("Listening for Art-Net packets on {} (UDP)", self.socket.local_addr()?);
         loop {
             let mut buffer = [0u8; 1024];
             let (length, addr) = self.socket.recv_from(&mut buffer).await?;
@@ -62,7 +76,9 @@ impl ArtNetAdapter {
                         let index = self.allocation.index_of(address).unwrap();
                         self.frame[index] = dmx_data[address.channel()];
                     }
-                    self.update_lighthouse().await?;
+                    if let Err(_) = self.sender.try_send(self.frame) {
+                        warn!("Lighthouse cannot keep up, dropping frame");
+                    }
                 }
             },
             _ => info! {
@@ -71,11 +87,6 @@ impl ArtNetAdapter {
             },
         }
 
-        Ok(())
-    }
-
-    async fn update_lighthouse(&mut self) -> Result<()> {
-        self.lh.put_model(self.frame.into()).await?;
         Ok(())
     }
 }
