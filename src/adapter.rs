@@ -30,7 +30,11 @@ impl ArtNetAdapter {
     }
 
     pub async fn run(mut self) -> Result<()> {
-        // TODO: Factor out Lighthouse forwarder into separate structure?
+        self.spawn_lighthouse_forwarder();
+        self.run_artnet_listener().await
+    }
+
+    fn spawn_lighthouse_forwarder(&mut self) {
         let mut lh = self.lh.take().unwrap();
         let frame = self.frame.clone();
         let frame_count = self.frame_count.clone();
@@ -55,7 +59,9 @@ impl ArtNetAdapter {
                 }
             }
         });
+    }
 
+    async fn run_artnet_listener(mut self) -> Result<()> {
         info!("Listening for Art-Net packets on {} (UDP)", self.socket.local_addr()?);
         loop {
             let mut buffer = [0u8; 1024];
