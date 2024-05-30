@@ -681,13 +681,14 @@ checksum = "9c198f91728a82281a64e1f4f9eeb25d82cb32a5de251c6bd1b5154d63a8e7bd"
 
 [[package]]
 name = "lighthouse-client"
-version = "3.2.0"
+version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8206f8aeb1d4a6aefc80da7c268d915ba83fcfdff5445e761be2b102d99758d7"
+checksum = "da6e25d1c0cde292a898e639e3b80262bfc173ff561de6dc6d84b1dc57e03bd7"
 dependencies = [
  "async-tungstenite",
  "futures",
  "lighthouse-protocol",
+ "pin-project",
  "rand",
  "rmp-serde",
  "serde",
@@ -699,9 +700,9 @@ dependencies = [
 
 [[package]]
 name = "lighthouse-protocol"
-version = "3.2.0"
+version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24f86a7b4b9c5aabcc217a1095424bf6c0db490a17a2d37577993c16d9167f7f"
+checksum = "0aad3135404bcc73fe3f65bb1d3feb4931f92b1e4b8340ef03bfec3a6f9812c1"
 dependencies = [
  "rand",
  "rmpv",
@@ -885,6 +886,26 @@ name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
+
+[[package]]
+name = "pin-project"
+version = "1.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6bf43b791c5b9e34c3d182969b4abb522f9343702850a2e57f460d00d09b4b3"
+dependencies = [
+ "pin-project-internal",
+]
+
+[[package]]
+name = "pin-project-internal"
+version = "1.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f38a4412a78282e09a2cf38d195ea5420d15ba0602cb375210efbc877243965"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "pin-project-lite"
